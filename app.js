@@ -1,21 +1,24 @@
-/* =========================================================
-   UPSC MCQ REVISION APP
-   Clean working JavaScript
-   ========================================================= */
-
 "use strict";
 
-/* ---------- STORAGE ---------- */
+/* =========================================================
+   UPSC MCQ REVISION APP
+   Corrected version for current index.html
+   ========================================================= */
 
-const STORAGE_KEY = "upsc_mcq_questions";
+const QUESTIONS_KEY = "upsc_mcq_questions";
+const ATTEMPTS_KEY = "upsc_mcq_attempts";
 
 let questions = [];
+let attempts = {};
+let quizList = [];
 let currentQuestion = 0;
 let score = 0;
 let answered = false;
 
 
-/* ---------- DEFAULT QUESTIONS ---------- */
+/* =========================================================
+   DEFAULT QUESTIONS
+   ========================================================= */
 
 const defaultQuestions = [
     {
@@ -30,7 +33,8 @@ const defaultQuestions = [
             "Article 21"
         ],
         answer: 1,
-        explanation: "Article 14 guarantees equality before law and equal protection of the laws."
+        explanation:
+            "Article 14 guarantees equality before law and equal protection of the laws."
     },
 
     {
@@ -45,7 +49,8 @@ const defaultQuestions = [
             "NITI Aayog"
         ],
         answer: 2,
-        explanation: "The Reserve Bank of India is responsible for monetary policy."
+        explanation:
+            "The Reserve Bank of India is responsible for monetary policy."
     },
 
     {
@@ -60,48 +65,64 @@ const defaultQuestions = [
             "Gravitational force of the Moon"
         ],
         answer: 1,
-        explanation: "The Coriolis effect results from Earth's rotation."
+        explanation:
+            "The Coriolis effect results from Earth's rotation."
     }
 ];
 
 
-/* ---------- INITIALIZATION ---------- */
+/* =========================================================
+   INITIALIZATION
+   ========================================================= */
 
 document.addEventListener("DOMContentLoaded", function () {
 
     loadQuestions();
+    loadAttempts();
 
     setupNavigation();
     setupQuiz();
     setupImport();
     setupSearch();
+    setupBackup();
+    setupInstall();
 
-    showScreen("home");
+    showScreen("dashboard");
+    updateDashboard();
 
     console.log("UPSC MCQ App loaded successfully.");
+
 });
 
 
-/* ---------- LOAD QUESTIONS ---------- */
+/* =========================================================
+   QUESTIONS
+   ========================================================= */
 
 function loadQuestions() {
 
     try {
 
-        const saved = localStorage.getItem(STORAGE_KEY);
+        const saved =
+            localStorage.getItem(QUESTIONS_KEY);
 
         if (saved) {
             questions = JSON.parse(saved);
         }
 
         if (!Array.isArray(questions) || questions.length === 0) {
+
             questions = defaultQuestions;
+
             saveQuestions();
         }
 
     } catch (error) {
 
-        console.error("Question loading error:", error);
+        console.error(
+            "Question loading error:",
+            error
+        );
 
         questions = defaultQuestions;
     }
@@ -110,145 +131,449 @@ function loadQuestions() {
 }
 
 
-/* ---------- SAVE QUESTIONS ---------- */
-
 function saveQuestions() {
 
     try {
+
         localStorage.setItem(
-            STORAGE_KEY,
+            QUESTIONS_KEY,
             JSON.stringify(questions)
         );
+
     } catch (error) {
-        console.error("Could not save questions:", error);
+
+        console.error(
+            "Could not save questions:",
+            error
+        );
     }
 
     updateQuestionCount();
 }
 
 
-/* ---------- NAVIGATION ---------- */
+function loadAttempts() {
+
+    try {
+
+        const saved =
+            localStorage.getItem(ATTEMPTS_KEY);
+
+        attempts = saved
+            ? JSON.parse(saved)
+            : {};
+
+        if (
+            !attempts ||
+            typeof attempts !== "object"
+        ) {
+            attempts = {};
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Attempt history error:",
+            error
+        );
+
+        attempts = {};
+    }
+}
+
+
+function saveAttempts() {
+
+    try {
+
+        localStorage.setItem(
+            ATTEMPTS_KEY,
+            JSON.stringify(attempts)
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Could not save attempts:",
+            error
+        );
+    }
+}
+
+
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
 
 function setupNavigation() {
 
-    /*
-       Event delegation:
-       Any button containing data-action will work,
-       even if the button was created dynamically.
-    */
+    document.addEventListener(
+        "click",
+        function (event) {
 
-    document.addEventListener("click", function (event) {
+            const button =
+                event.target.closest(
+                    "[data-action]"
+                );
 
-        const button = event.target.closest("[data-action]");
+            if (!button) return;
 
-        if (!button) return;
+            event.preventDefault();
 
-        const action = button.dataset.action;
+            const action =
+                button.dataset.action;
 
-        handleAction(action);
-    });
+            handleAction(action);
+        }
+    );
 }
 
 
 function handleAction(action) {
 
-    console.log("Action:", action);
+    console.log(
+        "Button action:",
+        action
+    );
 
     switch (action) {
 
         case "home":
-            showScreen("home");
+
+            showScreen("dashboard");
+            updateDashboard();
+
             break;
+
+
+        case "start":
+
+            startQuiz("all");
+
+            break;
+
 
         case "quiz":
+
         case "startQuiz":
-            startQuiz();
+
+            startQuiz("all");
+
             break;
+
+
+        case "unseen":
+
+            startQuiz("unseen");
+
+            break;
+
+
+        case "wrong":
+
+            startQuiz("wrong");
+
+            break;
+
 
         case "bank":
+
             showScreen("bank");
             renderQuestionBank();
+
             break;
+
 
         case "import":
+
             showScreen("import");
+
             break;
+
 
         case "backup":
+
             showScreen("backup");
-            renderBackup();
+
             break;
 
+
         default:
-            console.warn("Unknown action:", action);
+
+            console.warn(
+                "Unknown action:",
+                action
+            );
     }
 }
 
 
-/* ---------- SCREEN MANAGEMENT ---------- */
+/* =========================================================
+   SCREEN MANAGEMENT
+   ========================================================= */
 
 function showScreen(screenName) {
 
-    const screens = document.querySelectorAll(".screen");
+    const screens =
+        document.querySelectorAll(
+            ".screen"
+        );
 
-    screens.forEach(function (screen) {
-        screen.classList.remove("active");
-        screen.style.display = "none";
-    });
+    screens.forEach(
+        function (screen) {
+
+            screen.classList.remove(
+                "active"
+            );
+
+            screen.style.display =
+                "none";
+        }
+    );
 
 
-    const target = document.getElementById(screenName);
+    const target =
+        document.getElementById(
+            screenName
+        );
+
 
     if (target) {
 
-        target.classList.add("active");
-        target.style.display = "block";
+        target.classList.add(
+            "active"
+        );
+
+        target.style.display =
+            "block";
+
+        window.scrollTo(
+            0,
+            0
+        );
 
     } else {
 
-        console.warn("Screen not found:", screenName);
+        console.error(
+            "Screen not found:",
+            screenName
+        );
     }
 }
 
 
-/* ---------- QUIZ ---------- */
+/* =========================================================
+   DASHBOARD
+   ========================================================= */
 
-function setupQuiz() {
+function updateDashboard() {
 
-    const nextButton = document.getElementById("nextBtn");
+    const total =
+        questions.length;
 
-    if (nextButton) {
+    const attempted =
+        Object.keys(attempts);
 
-        nextButton.addEventListener("click", function () {
 
-            currentQuestion++;
+    let correct = 0;
+    let wrong = 0;
 
-            if (currentQuestion >= questions.length) {
 
-                showQuizResult();
+    attempted.forEach(
+        function (id) {
+
+            if (
+                attempts[id] &&
+                attempts[id].correct
+            ) {
+
+                correct++;
 
             } else {
 
-                renderQuestion();
+                wrong++;
             }
+        }
+    );
 
-        });
+
+    const unseen =
+        questions.filter(
+            function (question) {
+
+                return !attempts[
+                    question.id
+                ];
+            }
+        ).length;
+
+
+    const accuracy =
+        attempted.length
+            ? Math.round(
+                (correct /
+                    attempted.length) *
+                    100
+            )
+            : 0;
+
+
+    setText(
+        "totalStat",
+        total
+    );
+
+    setText(
+        "unseenStat",
+        unseen
+    );
+
+    setText(
+        "wrongStat",
+        wrong
+    );
+
+    setText(
+        "accuracyStat",
+        accuracy + "%"
+    );
+
+
+    const summary =
+        document.getElementById(
+            "bankSummary"
+        );
+
+
+    if (summary) {
+
+        summary.textContent =
+            total +
+            " question" +
+            (total === 1
+                ? ""
+                : "s") +
+            " available for revision.";
     }
 }
 
 
-function startQuiz() {
+/* =========================================================
+   QUIZ
+   ========================================================= */
 
-    if (questions.length === 0) {
+function setupQuiz() {
 
-        alert("No questions are available.");
+    const nextButton =
+        document.getElementById(
+            "nextBtn"
+        );
+
+
+    if (!nextButton) return;
+
+
+    nextButton.addEventListener(
+        "click",
+        function () {
+
+            if (
+                currentQuestion <
+                quizList.length - 1
+            ) {
+
+                currentQuestion++;
+
+                renderQuestion();
+
+            } else {
+
+                showQuizResult();
+            }
+        }
+    );
+}
+
+
+function startQuiz(mode) {
+
+    let list =
+        questions.slice();
+
+
+    if (mode === "unseen") {
+
+        list =
+            list.filter(
+                function (question) {
+
+                    return !attempts[
+                        question.id
+                    ];
+                }
+            );
+    }
+
+
+    if (mode === "wrong") {
+
+        list =
+            list.filter(
+                function (question) {
+
+                    return (
+                        attempts[
+                            question.id
+                        ] &&
+                        !attempts[
+                            question.id
+                        ].correct
+                    );
+                }
+            );
+    }
+
+
+    if (list.length === 0) {
+
+        if (mode === "unseen") {
+
+            alert(
+                "There are no unseen questions."
+            );
+
+        } else if (
+            mode === "wrong"
+        ) {
+
+            alert(
+                "There are no wrong questions."
+            );
+
+        } else {
+
+            alert(
+                "No questions are available."
+            );
+        }
 
         return;
     }
 
+
+    quizList =
+        list.sort(
+            function () {
+
+                return Math.random() - 0.5;
+            }
+        );
+
+
     currentQuestion = 0;
     score = 0;
     answered = false;
+
 
     showScreen("quiz");
 
@@ -258,16 +583,26 @@ function startQuiz() {
 
 function renderQuestion() {
 
-    if (!questions.length) return;
+    if (!quizList.length) return;
 
-    const q = questions[currentQuestion];
+
+    const q =
+        quizList[
+            currentQuestion
+        ];
+
+
+    if (!q) return;
+
 
     answered = false;
 
 
-    /* Counter */
+    const counter =
+        document.getElementById(
+            "quizCounter"
+        );
 
-    const counter = document.getElementById("quizCounter");
 
     if (counter) {
 
@@ -275,201 +610,315 @@ function renderQuestion() {
             "Question " +
             (currentQuestion + 1) +
             " of " +
-            questions.length;
+            quizList.length;
     }
 
 
-    /* Progress */
+    const progress =
+        document.getElementById(
+            "progressBar"
+        );
 
-    const progress = document.getElementById("progressBar");
 
     if (progress) {
 
         const percent =
-            ((currentQuestion) / questions.length) * 100;
+            ((currentQuestion + 1) /
+                quizList.length) *
+            100;
 
-        progress.style.width = percent + "%";
+        progress.style.width =
+            percent + "%";
     }
 
 
-    /* Subject */
-
-    const subject = document.getElementById("qSubject");
-
-    if (subject) {
-        subject.textContent = q.subject || "";
-    }
+    setText(
+        "qSubject",
+        q.subject || ""
+    );
 
 
-    /* Topic */
-
-    const topic = document.getElementById("qTopic");
-
-    if (topic) {
-        topic.textContent = q.topic || "";
-    }
+    setText(
+        "qTopic",
+        q.topic || ""
+    );
 
 
-    /* Question */
+    setText(
+        "questionText",
+        q.question || ""
+    );
 
-    const questionText =
-        document.getElementById("questionText");
-
-    if (questionText) {
-        questionText.textContent = q.question || "";
-    }
-
-
-    /* Options */
 
     const optionsContainer =
-        document.getElementById("options");
+        document.getElementById(
+            "options"
+        );
+
 
     if (optionsContainer) {
 
-        optionsContainer.innerHTML = "";
+        optionsContainer.innerHTML =
+            "";
 
-        q.options.forEach(function (option, index) {
 
-            const button =
-                document.createElement("button");
+        q.options.forEach(
+            function (
+                option,
+                index
+            ) {
 
-            button.className = "option";
+                const button =
+                    document.createElement(
+                        "button"
+                    );
 
-            button.textContent =
-                String.fromCharCode(65 + index) +
-                ". " +
-                option;
 
-            button.addEventListener(
-                "click",
-                function () {
+                button.type =
+                    "button";
 
-                    selectAnswer(index);
-                }
-            );
 
-            optionsContainer.appendChild(button);
-        });
+                button.className =
+                    "option";
+
+
+                button.textContent =
+                    String.fromCharCode(
+                        65 + index
+                    ) +
+                    ". " +
+                    option;
+
+
+                button.addEventListener(
+                    "click",
+                    function () {
+
+                        selectAnswer(
+                            index
+                        );
+                    }
+                );
+
+
+                optionsContainer.appendChild(
+                    button
+                );
+            }
+        );
     }
 
 
-    /* Feedback */
-
     const feedback =
-        document.getElementById("feedback");
+        document.getElementById(
+            "feedback"
+        );
+
 
     if (feedback) {
 
-        feedback.hidden = true;
-        feedback.innerHTML = "";
+        feedback.hidden =
+            true;
+
+        feedback.innerHTML =
+            "";
     }
 
 
-    /* Next */
-
     const nextButton =
-        document.getElementById("nextBtn");
+        document.getElementById(
+            "nextBtn"
+        );
+
 
     if (nextButton) {
 
-        nextButton.hidden = true;
+        nextButton.hidden =
+            true;
+
+        nextButton.textContent =
+            currentQuestion ===
+            quizList.length - 1
+                ? "Finish Quiz"
+                : "Next Question →";
     }
 }
 
 
-/* ---------- ANSWER ---------- */
+/* =========================================================
+   ANSWER SELECTION
+   ========================================================= */
 
-function selectAnswer(selectedIndex) {
+function selectAnswer(
+    selectedIndex
+) {
 
     if (answered) return;
 
+
+    const q =
+        quizList[
+            currentQuestion
+        ];
+
+
+    if (!q) return;
+
+
     answered = true;
 
-    const q = questions[currentQuestion];
 
-    const optionButtons =
-        document.querySelectorAll("#options .option");
-
-
-    optionButtons.forEach(function (button, index) {
-
-        button.disabled = true;
-
-        if (index === q.answer) {
-            button.classList.add("correct");
-        }
-
-        if (
-            index === selectedIndex &&
-            selectedIndex !== q.answer
-        ) {
-            button.classList.add("wrong");
-        }
-    });
+    const correct =
+        selectedIndex ===
+        q.answer;
 
 
-    if (selectedIndex === q.answer) {
+    if (correct) {
+
         score++;
     }
 
 
+    attempts[q.id] = {
+
+        correct:
+            correct,
+
+        selected:
+            selectedIndex,
+
+        date:
+            new Date().toISOString()
+    };
+
+
+    saveAttempts();
+
+
+    const optionButtons =
+        document.querySelectorAll(
+            "#options .option"
+        );
+
+
+    optionButtons.forEach(
+        function (
+            button,
+            index
+        ) {
+
+            button.disabled =
+                true;
+
+
+            if (
+                index ===
+                q.answer
+            ) {
+
+                button.classList.add(
+                    "correct"
+                );
+            }
+
+
+            if (
+                index ===
+                    selectedIndex &&
+                !correct
+            ) {
+
+                button.classList.add(
+                    "wrong"
+                );
+            }
+        }
+    );
+
+
     const feedback =
-        document.getElementById("feedback");
+        document.getElementById(
+            "feedback"
+        );
+
 
     if (feedback) {
 
-        feedback.hidden = false;
+        feedback.hidden =
+            false;
 
-        if (selectedIndex === q.answer) {
+
+        if (correct) {
 
             feedback.innerHTML =
                 "<strong>Correct!</strong><br>" +
-                (q.explanation || "");
+                escapeHTML(
+                    q.explanation ||
+                    ""
+                );
 
         } else {
 
             feedback.innerHTML =
                 "<strong>Incorrect.</strong><br>" +
                 "Correct answer: " +
-                q.options[q.answer] +
+                escapeHTML(
+                    q.options[
+                        q.answer
+                    ]
+                ) +
                 "<br>" +
-                (q.explanation || "");
+                escapeHTML(
+                    q.explanation ||
+                    ""
+                );
         }
     }
 
 
     const nextButton =
-        document.getElementById("nextBtn");
+        document.getElementById(
+            "nextBtn"
+        );
+
 
     if (nextButton) {
 
-        nextButton.hidden = false;
+        nextButton.hidden =
+            false;
 
-        if (currentQuestion === questions.length - 1) {
-            nextButton.textContent = "Finish Quiz";
-        } else {
-            nextButton.textContent = "Next Question →";
-        }
+
+        nextButton.textContent =
+            currentQuestion ===
+            quizList.length - 1
+                ? "Finish Quiz"
+                : "Next Question →";
     }
 }
 
 
-/* ---------- QUIZ RESULT ---------- */
+/* =========================================================
+   QUIZ RESULT
+   ========================================================= */
 
 function showQuizResult() {
 
     const quiz =
-        document.getElementById("quiz");
+        document.getElementById(
+            "quiz"
+        );
+
 
     if (!quiz) return;
 
 
     const percentage =
-        questions.length
+        quizList.length
             ? Math.round(
-                (score / questions.length) * 100
-              )
+                (score /
+                    quizList.length) *
+                    100
+            )
             : 0;
 
 
@@ -482,7 +931,7 @@ function showQuizResult() {
             <p>
                 Score:
                 <strong>
-                    ${score} / ${questions.length}
+                    ${score} / ${quizList.length}
                 </strong>
             </p>
 
@@ -495,7 +944,7 @@ function showQuizResult() {
 
             <button
                 class="primary full"
-                onclick="startQuiz()">
+                id="restartQuizBtn">
                 Restart Quiz
             </button>
 
@@ -507,156 +956,229 @@ function showQuizResult() {
 
         </div>
     `;
+
+
+    const restart =
+        document.getElementById(
+            "restartQuizBtn"
+        );
+
+
+    if (restart) {
+
+        restart.addEventListener(
+            "click",
+            function () {
+
+                startQuiz("all");
+            }
+        );
+    }
 }
 
 
-/* ---------- QUESTION BANK ---------- */
+/* =========================================================
+   QUESTION BANK
+   ========================================================= */
 
 function renderQuestionBank() {
 
     const list =
-        document.getElementById("bankList");
+        document.getElementById(
+            "bankList"
+        );
+
 
     if (!list) return;
 
 
-    if (questions.length === 0) {
+    const search =
+        document.getElementById(
+            "bankSearch"
+        );
 
-        list.innerHTML =
-            "<p>No questions available.</p>";
 
-        return;
-    }
+    const term =
+        search
+            ? search.value
+                .trim()
+                .toLowerCase()
+            : "";
+
+
+    const filtered =
+        questions.filter(
+            function (q) {
+
+                return (
+
+                    String(
+                        q.id || ""
+                    )
+                        .toLowerCase()
+                        .includes(term)
+
+                    ||
+
+                    String(
+                        q.subject || ""
+                    )
+                        .toLowerCase()
+                        .includes(term)
+
+                    ||
+
+                    String(
+                        q.topic || ""
+                    )
+                        .toLowerCase()
+                        .includes(term)
+
+                    ||
+
+                    String(
+                        q.question || ""
+                    )
+                        .toLowerCase()
+                        .includes(term)
+                );
+            }
+        );
 
 
     list.innerHTML = "";
 
 
-    questions.forEach(function (q, index) {
+    if (!filtered.length) {
 
-        const item =
-            document.createElement("div");
+        list.innerHTML =
+            "<p>No matching questions.</p>";
 
-        item.className = "card";
-
-        item.innerHTML = `
-
-            <h3>
-                ${escapeHTML(q.id || "Question " + (index + 1))}
-            </h3>
-
-            <p>
-                <strong>
-                    ${escapeHTML(q.subject || "")}
-                </strong>
-                —
-                ${escapeHTML(q.topic || "")}
-            </p>
-
-            <p>
-                ${escapeHTML(q.question || "")}
-            </p>
-
-        `;
-
-        list.appendChild(item);
-    });
-}
+        return;
+    }
 
 
-/* ---------- SEARCH ---------- */
-
-function setupSearch() {
-
-    const search =
-        document.getElementById("bankSearch");
-
-    if (!search) return;
-
-
-    search.addEventListener("input", function () {
-
-        const term =
-            search.value.trim().toLowerCase();
-
-        const list =
-            document.getElementById("bankList");
-
-        if (!list) return;
-
-
-        const filtered =
-            questions.filter(function (q) {
-
-                return (
-                    String(q.subject || "")
-                        .toLowerCase()
-                        .includes(term) ||
-
-                    String(q.topic || "")
-                        .toLowerCase()
-                        .includes(term) ||
-
-                    String(q.question || "")
-                        .toLowerCase()
-                        .includes(term)
-                );
-            });
-
-
-        list.innerHTML = "";
-
-
-        filtered.forEach(function (q) {
+    filtered.forEach(
+        function (
+            q,
+            index
+        ) {
 
             const item =
-                document.createElement("div");
+                document.createElement(
+                    "div"
+                );
 
-            item.className = "card";
+
+            item.className =
+                "card";
+
+
+            const status =
+                attempts[q.id]
+                    ? attempts[q.id].correct
+                        ? "Correct"
+                        : "Wrong"
+                    : "Unseen";
+
 
             item.innerHTML = `
+
                 <h3>
-                    ${escapeHTML(q.id || "")}
+                    ${escapeHTML(
+                        q.id ||
+                        "Question " +
+                        (index + 1)
+                    )}
                 </h3>
 
                 <p>
                     <strong>
-                        ${escapeHTML(q.subject || "")}
+                        ${escapeHTML(
+                            q.subject || ""
+                        )}
                     </strong>
                     —
-                    ${escapeHTML(q.topic || "")}
+                    ${escapeHTML(
+                        q.topic || ""
+                    )}
                 </p>
 
                 <p>
-                    ${escapeHTML(q.question || "")}
+                    ${escapeHTML(
+                        q.question || ""
+                    )}
+                </p>
+
+                <p>
+                    <strong>Status:</strong>
+                    ${status}
                 </p>
             `;
 
-            list.appendChild(item);
-        });
-    });
+
+            list.appendChild(
+                item
+            );
+        }
+    );
 }
 
 
-/* ---------- IMPORT ---------- */
+/* =========================================================
+   SEARCH
+   ========================================================= */
+
+function setupSearch() {
+
+    const search =
+        document.getElementById(
+            "bankSearch"
+        );
+
+
+    if (!search) return;
+
+
+    search.addEventListener(
+        "input",
+        function () {
+
+            renderQuestionBank();
+        }
+    );
+}
+
+
+/* =========================================================
+   IMPORT QUESTIONS
+   ========================================================= */
 
 function setupImport() {
 
-    const importButton =
-        document.getElementById("importRun");
+    const button =
+        document.getElementById(
+            "importRun"
+        );
 
-    if (!importButton) return;
+
+    if (!button) return;
 
 
-    importButton.addEventListener(
+    button.addEventListener(
         "click",
         function () {
 
             const box =
-                document.getElementById("importBox");
+                document.getElementById(
+                    "importBox"
+                );
+
 
             const message =
-                document.getElementById("importMsg");
+                document.getElementById(
+                    "importMsg"
+                );
 
 
             if (!box) return;
@@ -665,10 +1187,16 @@ function setupImport() {
             try {
 
                 const imported =
-                    JSON.parse(box.value);
+                    JSON.parse(
+                        box.value
+                    );
 
 
-                if (!Array.isArray(imported)) {
+                if (
+                    !Array.isArray(
+                        imported
+                    )
+                ) {
 
                     throw new Error(
                         "JSON must contain an array."
@@ -677,19 +1205,12 @@ function setupImport() {
 
 
                 const valid =
-                    imported.filter(function (q) {
-
-                        return (
-                            q &&
-                            typeof q.question === "string" &&
-                            Array.isArray(q.options) &&
-                            q.options.length >= 2 &&
-                            typeof q.answer === "number"
-                        );
-                    });
+                    imported.filter(
+                        isValidQuestion
+                    );
 
 
-                if (valid.length === 0) {
+                if (!valid.length) {
 
                     throw new Error(
                         "No valid questions found."
@@ -697,168 +1218,486 @@ function setupImport() {
                 }
 
 
-                questions = valid;
+                const existing =
+                    new Map(
+                        questions.map(
+                            function (q) {
+
+                                return [
+                                    q.id,
+                                    q
+                                ];
+                            }
+                        )
+                    );
+
+
+                valid.forEach(
+                    function (
+                        q,
+                        index
+                    ) {
+
+                        if (!q.id) {
+
+                            q.id =
+                                "IMPORTED-" +
+                                Date.now() +
+                                "-" +
+                                index;
+                        }
+
+
+                        existing.set(
+                            q.id,
+                            q
+                        );
+                    }
+                );
+
+
+                questions =
+                    Array.from(
+                        existing.values()
+                    );
+
 
                 saveQuestions();
 
 
                 if (message) {
 
-                    message.hidden = false;
+                    message.hidden =
+                        false;
 
                     message.textContent =
                         valid.length +
-                        " question(s) imported successfully.";
+                        " question(s) imported successfully. Total: " +
+                        questions.length +
+                        ".";
                 }
 
 
-                renderQuestionBank();
-
+                updateDashboard();
 
             } catch (error) {
 
                 if (message) {
 
-                    message.hidden = false;
+                    message.hidden =
+                        false;
 
                     message.textContent =
                         "Import error: " +
                         error.message;
                 }
-
-                console.error(error);
             }
         }
     );
 }
 
 
-/* ---------- BACKUP ---------- */
+function isValidQuestion(q) {
 
-function renderBackup() {
+    return (
 
-    const backupScreen =
-        document.getElementById("backup");
+        q &&
 
-    if (!backupScreen) return;
+        typeof q.question ===
+            "string" &&
 
+        Array.isArray(
+            q.options
+        ) &&
 
-    const old =
-        backupScreen.querySelector(".backup-content");
+        q.options.length >= 2 &&
 
-    if (old) old.remove();
+        Number.isInteger(
+            q.answer
+        ) &&
 
+        q.answer >= 0 &&
 
-    const container =
-        document.createElement("div");
-
-    container.className =
-        "card backup-content";
-
-
-    container.innerHTML = `
-
-        <h3>Question Bank Backup</h3>
-
-        <p>
-            ${questions.length}
-            question(s) currently stored.
-        </p>
-
-        <button
-            class="primary"
-            id="downloadBackup">
-            Download Backup
-        </button>
-
-    `;
-
-
-    backupScreen.appendChild(container);
-
-
-    document
-        .getElementById("downloadBackup")
-        .addEventListener(
-            "click",
-            downloadBackup
-        );
+        q.answer <
+            q.options.length
+    );
 }
 
 
-function downloadBackup() {
+/* =========================================================
+   BACKUP / RESTORE
+   ========================================================= */
 
-    const data =
-        JSON.stringify(
-            questions,
-            null,
-            2
+function setupBackup() {
+
+    const exportButton =
+        document.getElementById(
+            "exportBtn"
         );
+
+
+    if (exportButton) {
+
+        exportButton.addEventListener(
+            "click",
+            exportBackup
+        );
+    }
+
+
+    const restoreInput =
+        document.getElementById(
+            "restoreFile"
+        );
+
+
+    if (restoreInput) {
+
+        restoreInput.addEventListener(
+            "change",
+            restoreBackup
+        );
+    }
+
+
+    const resetButton =
+        document.getElementById(
+            "resetBtn"
+        );
+
+
+    if (resetButton) {
+
+        resetButton.addEventListener(
+            "click",
+            function () {
+
+                const ok =
+                    confirm(
+                        "Reset all attempt history?"
+                    );
+
+
+                if (!ok) return;
+
+
+                attempts = {};
+
+                saveAttempts();
+
+                updateDashboard();
+
+
+                const message =
+                    document.getElementById(
+                        "restoreMsg"
+                    );
+
+
+                if (message) {
+
+                    message.hidden =
+                        false;
+
+                    message.textContent =
+                        "Attempt history reset.";
+                }
+            }
+        );
+    }
+}
+
+
+function exportBackup() {
+
+    const backup = {
+
+        questions:
+            questions,
+
+        attempts:
+            attempts
+    };
 
 
     const blob =
         new Blob(
-            [data],
+            [
+                JSON.stringify(
+                    backup,
+                    null,
+                    2
+                )
+            ],
             {
-                type: "application/json"
+                type:
+                    "application/json"
             }
         );
 
 
     const url =
-        URL.createObjectURL(blob);
+        URL.createObjectURL(
+            blob
+        );
 
 
     const link =
-        document.createElement("a");
+        document.createElement(
+            "a"
+        );
+
 
     link.href = url;
 
     link.download =
-        "upsc-question-bank.json";
+        "upsc-mcq-backup.json";
 
-    document.body.appendChild(link);
+
+    document.body.appendChild(
+        link
+    );
+
 
     link.click();
 
     link.remove();
 
-    URL.revokeObjectURL(url);
+
+    URL.revokeObjectURL(
+        url
+    );
 }
 
 
-/* ---------- COUNT ---------- */
+async function restoreBackup(
+    event
+) {
 
-function updateQuestionCount() {
+    const file =
+        event.target.files &&
+        event.target.files[0];
 
-    const elements =
-        document.querySelectorAll(
-            "[data-question-count]"
+
+    if (!file) return;
+
+
+    const message =
+        document.getElementById(
+            "restoreMsg"
         );
 
 
-    elements.forEach(function (element) {
+    try {
 
-        element.textContent =
-            questions.length;
-    });
+        const data =
+            JSON.parse(
+                await file.text()
+            );
+
+
+        if (
+            !data ||
+            !Array.isArray(
+                data.questions
+            )
+        ) {
+
+            throw new Error(
+                "Invalid backup file."
+            );
+        }
+
+
+        questions =
+            data.questions.filter(
+                isValidQuestion
+            );
+
+
+        attempts =
+            data.attempts &&
+            typeof data.attempts ===
+                "object"
+                ? data.attempts
+                : {};
+
+
+        saveQuestions();
+
+        saveAttempts();
+
+        updateDashboard();
+
+
+        if (message) {
+
+            message.hidden =
+                false;
+
+            message.textContent =
+                "Backup restored successfully. " +
+                questions.length +
+                " question(s) loaded.";
+        }
+
+    } catch (error) {
+
+        if (message) {
+
+            message.hidden =
+                false;
+
+            message.textContent =
+                "Restore error: " +
+                error.message;
+        }
+    }
+
+
+    event.target.value = "";
 }
 
 
-/* ---------- HTML SAFETY ---------- */
+/* =========================================================
+   INSTALL BUTTON
+   ========================================================= */
+
+let deferredPrompt = null;
+
+
+function setupInstall() {
+
+    const installButton =
+        document.getElementById(
+            "installBtn"
+        );
+
+
+    window.addEventListener(
+        "beforeinstallprompt",
+        function (event) {
+
+            event.preventDefault();
+
+            deferredPrompt =
+                event;
+
+
+            if (installButton) {
+
+                installButton.hidden =
+                    false;
+            }
+        }
+    );
+
+
+    if (installButton) {
+
+        installButton.addEventListener(
+            "click",
+            async function () {
+
+                if (
+                    !deferredPrompt
+                ) {
+
+                    return;
+                }
+
+
+                deferredPrompt.prompt();
+
+
+                await deferredPrompt.userChoice;
+
+
+                deferredPrompt =
+                    null;
+
+
+                installButton.hidden =
+                    true;
+            }
+        );
+    }
+}
+
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+
+function updateQuestionCount() {
+
+    document
+        .querySelectorAll(
+            "[data-question-count]"
+        )
+        .forEach(
+            function (element) {
+
+                element.textContent =
+                    questions.length;
+            }
+        );
+}
+
+
+function setText(
+    id,
+    value
+) {
+
+    const element =
+        document.getElementById(
+            id
+        );
+
+
+    if (element) {
+
+        element.textContent =
+            value;
+    }
+}
+
 
 function escapeHTML(value) {
 
     return String(value)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+
+        .replace(
+            /</g,
+            "&lt;"
+        )
+
+        .replace(
+            />/g,
+            "&gt;"
+        )
+
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+
+        .replace(
+            /'/g,
+            "&#039;"
+        );
 }
 
 
-/* ---------- DEBUG ---------- */
+/* =========================================================
+   ERROR REPORTING
+   ========================================================= */
 
 window.addEventListener(
     "error",
@@ -866,10 +1705,12 @@ window.addEventListener(
 
         console.error(
             "JavaScript error:",
-            event.error || event.message
+            event.error ||
+            event.message
         );
     }
 );
+
 
 console.log(
     "UPSC MCQ Revision App JavaScript ready."
