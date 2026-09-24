@@ -27,3 +27,4 @@ qs("#resetBtn").onclick=()=>{if(confirm("Reset all attempt history?")){data.atte
 if("serviceWorker"in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
 let deferredPrompt;window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;qs("#installBtn").hidden=false});qs("#installBtn").onclick=async()=>{if(deferredPrompt){deferredPrompt.prompt();deferredPrompt=null}};
 renderStats();
+alert("APP.JS IS WORKING");
