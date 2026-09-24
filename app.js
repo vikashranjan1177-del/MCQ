@@ -1,8 +1,8 @@
 "use strict";
 
 /* =========================================================
-   UPSC MCQ REVISION APP
-   Corrected version for current index.html
+   UPSC MCQ REVISION APP — FINAL
+   Compatible with the current index.html
    ========================================================= */
 
 const QUESTIONS_KEY = "upsc_mcq_questions";
@@ -25,7 +25,8 @@ const defaultQuestions = [
         id: "POL-001",
         subject: "Polity",
         topic: "Constitution",
-        question: "Which Article of the Constitution of India deals with equality before law?",
+        question:
+            "Which Article of the Constitution of India deals with equality before law?",
         options: [
             "Article 12",
             "Article 14",
@@ -36,12 +37,12 @@ const defaultQuestions = [
         explanation:
             "Article 14 guarantees equality before law and equal protection of the laws."
     },
-
     {
         id: "ECO-001",
         subject: "Economy",
         topic: "Monetary Policy",
-        question: "Which institution is responsible for conducting monetary policy in India?",
+        question:
+            "Which institution is responsible for conducting monetary policy in India?",
         options: [
             "Ministry of Finance",
             "SEBI",
@@ -52,12 +53,12 @@ const defaultQuestions = [
         explanation:
             "The Reserve Bank of India is responsible for monetary policy."
     },
-
     {
         id: "GEO-001",
         subject: "Geography",
         topic: "Physical Geography",
-        question: "The Coriolis force is caused primarily by:",
+        question:
+            "The Coriolis force is caused primarily by:",
         options: [
             "Revolution of the Earth",
             "Rotation of the Earth",
@@ -72,7 +73,7 @@ const defaultQuestions = [
 
 
 /* =========================================================
-   INITIALIZATION
+   START
    ========================================================= */
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -87,7 +88,11 @@ document.addEventListener("DOMContentLoaded", function () {
     setupBackup();
     setupInstall();
 
+    /* IMPORTANT:
+       The HTML screen is called "dashboard", NOT "home".
+    */
     showScreen("dashboard");
+
     updateDashboard();
 
     console.log("UPSC MCQ App loaded successfully.");
@@ -96,7 +101,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 /* =========================================================
-   QUESTIONS
+   STORAGE
    ========================================================= */
 
 function loadQuestions() {
@@ -110,10 +115,11 @@ function loadQuestions() {
             questions = JSON.parse(saved);
         }
 
-        if (!Array.isArray(questions) || questions.length === 0) {
-
+        if (
+            !Array.isArray(questions) ||
+            questions.length === 0
+        ) {
             questions = defaultQuestions;
-
             saveQuestions();
         }
 
@@ -159,9 +165,10 @@ function loadAttempts() {
         const saved =
             localStorage.getItem(ATTEMPTS_KEY);
 
-        attempts = saved
-            ? JSON.parse(saved)
-            : {};
+        attempts =
+            saved
+                ? JSON.parse(saved)
+                : {};
 
         if (
             !attempts ||
@@ -221,7 +228,9 @@ function setupNavigation() {
             event.preventDefault();
 
             const action =
-                button.dataset.action;
+                button.getAttribute(
+                    "data-action"
+                );
 
             handleAction(action);
         }
@@ -232,74 +241,59 @@ function setupNavigation() {
 function handleAction(action) {
 
     console.log(
-        "Button action:",
+        "Action:",
         action
     );
 
     switch (action) {
 
+        /* Dashboard / Home */
         case "home":
-
             showScreen("dashboard");
             updateDashboard();
-
             break;
 
 
+        /* Start Quiz */
         case "start":
-
-            startQuiz("all");
-
-            break;
-
-
         case "quiz":
-
         case "startQuiz":
-
             startQuiz("all");
-
             break;
 
 
+        /* Unseen Questions */
         case "unseen":
-
             startQuiz("unseen");
-
             break;
 
 
+        /* Wrong Questions */
         case "wrong":
-
             startQuiz("wrong");
-
             break;
 
 
+        /* Question Bank */
         case "bank":
-
             showScreen("bank");
             renderQuestionBank();
-
             break;
 
 
+        /* Import */
         case "import":
-
             showScreen("import");
-
             break;
 
 
+        /* Backup */
         case "backup":
-
             showScreen("backup");
-
             break;
 
 
         default:
-
             console.warn(
                 "Unknown action:",
                 action
@@ -338,27 +332,28 @@ function showScreen(screenName) {
         );
 
 
-    if (target) {
-
-        target.classList.add(
-            "active"
-        );
-
-        target.style.display =
-            "block";
-
-        window.scrollTo(
-            0,
-            0
-        );
-
-    } else {
+    if (!target) {
 
         console.error(
             "Screen not found:",
             screenName
         );
+
+        return;
     }
+
+
+    target.classList.add(
+        "active"
+    );
+
+    target.style.display =
+        "block";
+
+    window.scrollTo(
+        0,
+        0
+    );
 }
 
 
@@ -371,26 +366,26 @@ function updateDashboard() {
     const total =
         questions.length;
 
-    const attempted =
-        Object.keys(attempts);
-
-
     let correct = 0;
     let wrong = 0;
+    let attempted = 0;
 
 
-    attempted.forEach(
-        function (id) {
+    questions.forEach(
+        function (question) {
 
-            if (
-                attempts[id] &&
-                attempts[id].correct
-            ) {
+            const record =
+                attempts[
+                    question.id
+                ];
 
+            if (!record) return;
+
+            attempted++;
+
+            if (record.correct) {
                 correct++;
-
             } else {
-
                 wrong++;
             }
         }
@@ -398,22 +393,14 @@ function updateDashboard() {
 
 
     const unseen =
-        questions.filter(
-            function (question) {
-
-                return !attempts[
-                    question.id
-                ];
-            }
-        ).length;
+        total - attempted;
 
 
     const accuracy =
-        attempted.length
+        attempted > 0
             ? Math.round(
-                (correct /
-                    attempted.length) *
-                    100
+                (correct / attempted) *
+                100
             )
             : 0;
 
@@ -450,9 +437,7 @@ function updateDashboard() {
         summary.textContent =
             total +
             " question" +
-            (total === 1
-                ? ""
-                : "s") +
+            (total === 1 ? "" : "s") +
             " available for revision.";
     }
 }
@@ -470,12 +455,19 @@ function setupQuiz() {
         );
 
 
-    if (!nextButton) return;
+    if (!nextButton) {
+        return;
+    }
 
 
     nextButton.addEventListener(
         "click",
         function () {
+
+            if (!answered) {
+                return;
+            }
+
 
             if (
                 currentQuestion <
@@ -501,6 +493,7 @@ function startQuiz(mode) {
         questions.slice();
 
 
+    /* Unseen */
     if (mode === "unseen") {
 
         list =
@@ -515,6 +508,7 @@ function startQuiz(mode) {
     }
 
 
+    /* Wrong */
     if (mode === "wrong") {
 
         list =
@@ -525,9 +519,9 @@ function startQuiz(mode) {
                         attempts[
                             question.id
                         ] &&
-                        !attempts[
+                        attempts[
                             question.id
-                        ].correct
+                        ].correct === false
                     );
                 }
             );
@@ -542,9 +536,7 @@ function startQuiz(mode) {
                 "There are no unseen questions."
             );
 
-        } else if (
-            mode === "wrong"
-        ) {
+        } else if (mode === "wrong") {
 
             alert(
                 "There are no wrong questions."
@@ -561,17 +553,20 @@ function startQuiz(mode) {
     }
 
 
-    quizList =
-        list.sort(
-            function () {
+    /* Shuffle */
+    list.sort(
+        function () {
+            return Math.random() - 0.5;
+        }
+    );
 
-                return Math.random() - 0.5;
-            }
-        );
 
+    quizList = list;
 
     currentQuestion = 0;
+
     score = 0;
+
     answered = false;
 
 
@@ -581,9 +576,18 @@ function startQuiz(mode) {
 }
 
 
+/* =========================================================
+   DISPLAY QUESTION
+   ========================================================= */
+
 function renderQuestion() {
 
-    if (!quizList.length) return;
+    if (
+        !quizList ||
+        quizList.length === 0
+    ) {
+        return;
+    }
 
 
     const q =
@@ -592,11 +596,15 @@ function renderQuestion() {
         ];
 
 
-    if (!q) return;
+    if (!q) {
+        return;
+    }
 
 
     answered = false;
 
+
+    /* Counter */
 
     const counter =
         document.getElementById(
@@ -614,6 +622,8 @@ function renderQuestion() {
     }
 
 
+    /* Progress */
+
     const progress =
         document.getElementById(
             "progressBar"
@@ -622,15 +632,18 @@ function renderQuestion() {
 
     if (progress) {
 
-        const percent =
-            ((currentQuestion + 1) /
-                quizList.length) *
-            100;
+        const percentage =
+            (
+                (currentQuestion + 1) /
+                quizList.length
+            ) * 100;
 
         progress.style.width =
-            percent + "%";
+            percentage + "%";
     }
 
+
+    /* Subject */
 
     setText(
         "qSubject",
@@ -638,11 +651,15 @@ function renderQuestion() {
     );
 
 
+    /* Topic */
+
     setText(
         "qTopic",
         q.topic || ""
     );
 
+
+    /* Question */
 
     setText(
         "questionText",
@@ -650,16 +667,17 @@ function renderQuestion() {
     );
 
 
-    const optionsContainer =
+    /* Options */
+
+    const options =
         document.getElementById(
             "options"
         );
 
 
-    if (optionsContainer) {
+    if (options) {
 
-        optionsContainer.innerHTML =
-            "";
+        options.innerHTML = "";
 
 
         q.options.forEach(
@@ -676,7 +694,6 @@ function renderQuestion() {
 
                 button.type =
                     "button";
-
 
                 button.className =
                     "option";
@@ -701,13 +718,15 @@ function renderQuestion() {
                 );
 
 
-                optionsContainer.appendChild(
+                options.appendChild(
                     button
                 );
             }
         );
     }
 
+
+    /* Feedback */
 
     const feedback =
         document.getElementById(
@@ -724,6 +743,8 @@ function renderQuestion() {
             "";
     }
 
+
+    /* Next button */
 
     const nextButton =
         document.getElementById(
@@ -746,14 +767,16 @@ function renderQuestion() {
 
 
 /* =========================================================
-   ANSWER SELECTION
+   ANSWER
    ========================================================= */
 
 function selectAnswer(
     selectedIndex
 ) {
 
-    if (answered) return;
+    if (answered) {
+        return;
+    }
 
 
     const q =
@@ -762,27 +785,30 @@ function selectAnswer(
         ];
 
 
-    if (!q) return;
+    if (!q) {
+        return;
+    }
 
 
     answered = true;
 
 
-    const correct =
+    const isCorrect =
         selectedIndex ===
         q.answer;
 
 
-    if (correct) {
-
+    if (isCorrect) {
         score++;
     }
 
 
+    /* Save attempt */
+
     attempts[q.id] = {
 
         correct:
-            correct,
+            isCorrect,
 
         selected:
             selectedIndex,
@@ -795,13 +821,15 @@ function selectAnswer(
     saveAttempts();
 
 
-    const optionButtons =
+    /* Colour answers */
+
+    const buttons =
         document.querySelectorAll(
             "#options .option"
         );
 
 
-    optionButtons.forEach(
+    buttons.forEach(
         function (
             button,
             index
@@ -825,7 +853,7 @@ function selectAnswer(
             if (
                 index ===
                     selectedIndex &&
-                !correct
+                !isCorrect
             ) {
 
                 button.classList.add(
@@ -835,6 +863,8 @@ function selectAnswer(
         }
     );
 
+
+    /* Feedback */
 
     const feedback =
         document.getElementById(
@@ -848,7 +878,7 @@ function selectAnswer(
             false;
 
 
-        if (correct) {
+        if (isCorrect) {
 
             feedback.innerHTML =
                 "<strong>Correct!</strong><br>" +
@@ -876,6 +906,8 @@ function selectAnswer(
     }
 
 
+    /* Show next */
+
     const nextButton =
         document.getElementById(
             "nextBtn"
@@ -894,6 +926,9 @@ function selectAnswer(
                 ? "Finish Quiz"
                 : "Next Question →";
     }
+
+
+    updateDashboard();
 }
 
 
@@ -909,15 +944,20 @@ function showQuizResult() {
         );
 
 
-    if (!quiz) return;
+    if (!quiz) {
+        return;
+    }
+
+
+    const total =
+        quizList.length;
 
 
     const percentage =
-        quizList.length
+        total > 0
             ? Math.round(
-                (score /
-                    quizList.length) *
-                    100
+                (score / total) *
+                100
             )
             : 0;
 
@@ -931,7 +971,7 @@ function showQuizResult() {
             <p>
                 Score:
                 <strong>
-                    ${score} / ${quizList.length}
+                    ${score} / ${total}
                 </strong>
             </p>
 
@@ -943,15 +983,15 @@ function showQuizResult() {
             </p>
 
             <button
-                class="primary full"
-                id="restartQuizBtn">
+                id="restartQuiz"
+                class="primary full">
                 Restart Quiz
             </button>
 
             <button
                 class="back"
                 data-action="home">
-                ← Dashboard
+                ‹ Dashboard
             </button>
 
         </div>
@@ -960,7 +1000,7 @@ function showQuizResult() {
 
     const restart =
         document.getElementById(
-            "restartQuizBtn"
+            "restartQuiz"
         );
 
 
@@ -989,7 +1029,9 @@ function renderQuestionBank() {
         );
 
 
-    if (!list) return;
+    if (!list) {
+        return;
+    }
 
 
     const search =
@@ -1049,7 +1091,7 @@ function renderQuestionBank() {
     list.innerHTML = "";
 
 
-    if (!filtered.length) {
+    if (filtered.length === 0) {
 
         list.innerHTML =
             "<p>No matching questions.</p>";
@@ -1064,25 +1106,30 @@ function renderQuestionBank() {
             index
         ) {
 
-            const item =
+            const card =
                 document.createElement(
                     "div"
                 );
 
 
-            item.className =
+            card.className =
                 "card";
 
 
-            const status =
-                attempts[q.id]
-                    ? attempts[q.id].correct
+            let status =
+                "Unseen";
+
+
+            if (attempts[q.id]) {
+
+                status =
+                    attempts[q.id].correct
                         ? "Correct"
-                        : "Wrong"
-                    : "Unseen";
+                        : "Wrong";
+            }
 
 
-            item.innerHTML = `
+            card.innerHTML = `
 
                 <h3>
                     ${escapeHTML(
@@ -1118,7 +1165,7 @@ function renderQuestionBank() {
 
 
             list.appendChild(
-                item
+                card
             );
         }
     );
@@ -1137,7 +1184,9 @@ function setupSearch() {
         );
 
 
-    if (!search) return;
+    if (!search) {
+        return;
+    }
 
 
     search.addEventListener(
@@ -1151,7 +1200,7 @@ function setupSearch() {
 
 
 /* =========================================================
-   IMPORT QUESTIONS
+   IMPORT
    ========================================================= */
 
 function setupImport() {
@@ -1162,7 +1211,9 @@ function setupImport() {
         );
 
 
-    if (!button) return;
+    if (!button) {
+        return;
+    }
 
 
     button.addEventListener(
@@ -1181,7 +1232,9 @@ function setupImport() {
                 );
 
 
-            if (!box) return;
+            if (!box) {
+                return;
+            }
 
 
             try {
@@ -1210,7 +1263,9 @@ function setupImport() {
                     );
 
 
-                if (!valid.length) {
+                if (
+                    valid.length === 0
+                ) {
 
                     throw new Error(
                         "No valid questions found."
@@ -1218,18 +1273,19 @@ function setupImport() {
                 }
 
 
-                const existing =
-                    new Map(
-                        questions.map(
-                            function (q) {
+                const map =
+                    new Map();
 
-                                return [
-                                    q.id,
-                                    q
-                                ];
-                            }
-                        )
-                    );
+
+                questions.forEach(
+                    function (q) {
+
+                        map.set(
+                            q.id,
+                            q
+                        );
+                    }
+                );
 
 
                 valid.forEach(
@@ -1248,7 +1304,7 @@ function setupImport() {
                         }
 
 
-                        existing.set(
+                        map.set(
                             q.id,
                             q
                         );
@@ -1258,11 +1314,13 @@ function setupImport() {
 
                 questions =
                     Array.from(
-                        existing.values()
+                        map.values()
                     );
 
 
                 saveQuestions();
+
+                updateDashboard();
 
 
                 if (message) {
@@ -1278,9 +1336,13 @@ function setupImport() {
                 }
 
 
-                updateDashboard();
-
             } catch (error) {
+
+                console.error(
+                    "Import error:",
+                    error
+                );
+
 
                 if (message) {
 
@@ -1372,13 +1434,13 @@ function setupBackup() {
             "click",
             function () {
 
-                const ok =
-                    confirm(
+                if (
+                    !confirm(
                         "Reset all attempt history?"
-                    );
-
-
-                if (!ok) return;
+                    )
+                ) {
+                    return;
+                }
 
 
                 attempts = {};
@@ -1448,7 +1510,9 @@ function exportBackup() {
         );
 
 
-    link.href = url;
+    link.href =
+        url;
+
 
     link.download =
         "upsc-mcq-backup.json";
@@ -1460,6 +1524,7 @@ function exportBackup() {
 
 
     link.click();
+
 
     link.remove();
 
@@ -1479,7 +1544,9 @@ async function restoreBackup(
         event.target.files[0];
 
 
-    if (!file) return;
+    if (!file) {
+        return;
+    }
 
 
     const message =
@@ -1541,7 +1608,14 @@ async function restoreBackup(
                 " question(s) loaded.";
         }
 
+
     } catch (error) {
+
+        console.error(
+            "Restore error:",
+            error
+        );
+
 
         if (message) {
 
@@ -1560,7 +1634,7 @@ async function restoreBackup(
 
 
 /* =========================================================
-   INSTALL BUTTON
+   INSTALL
    ========================================================= */
 
 let deferredPrompt = null;
@@ -1602,7 +1676,6 @@ function setupInstall() {
                 if (
                     !deferredPrompt
                 ) {
-
                     return;
                 }
 
@@ -1704,7 +1777,7 @@ window.addEventListener(
     function (event) {
 
         console.error(
-            "JavaScript error:",
+            "UPSC MCQ JavaScript error:",
             event.error ||
             event.message
         );
@@ -1713,5 +1786,5 @@ window.addEventListener(
 
 
 console.log(
-    "UPSC MCQ Revision App JavaScript ready."
+    "UPSC MCQ Revision App — FINAL JS loaded."
 );
