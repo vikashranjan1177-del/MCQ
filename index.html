@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="styles.css">
+<title>UPSC MCQ Revision</title>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div>
+      <div class="eyebrow">UPSC CSE • REVISION</div>
+      <h1>MCQ Revision</h1>
+    </div>
+    <button id="installBtn" class="icon-btn" hidden>Install</button>
+  </header>
+
+  <main>
+    <section id="dashboard" class="screen active">
+      <div class="hero card">
+        <div>
+          <h2>Ready to revise?</h2>
+          <p id="bankSummary">Loading question bank…</p>
+        </div>
+        <button class="primary" data-action="start">Start Quiz</button>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat card"><span id="totalStat">0</span><small>Total</small></div>
+        <div class="stat card"><span id="unseenStat">0</span><small>Unseen</small></div>
+        <div class="stat card"><span id="wrongStat">0</span><small>Wrong</small></div>
+        <div class="stat card"><span id="accuracyStat">0%</span><small>Accuracy</small></div>
+      </div>
+
+      <div class="menu-grid">
+        <button class="menu card" data-action="start"><b>🎯 Start Quiz</b><span>Mixed questions</span></button>
+        <button class="menu card" data-action="unseen"><b>🆕 Unseen</b><span>Questions not attempted</span></button>
+        <button class="menu card" data-action="wrong"><b>❌ Wrong Questions</b><span>Revise mistakes</span></button>
+        <button class="menu card" data-action="bank"><b>📚 Question Bank</b><span>Browse all questions</span></button>
+        <button class="menu card" data-action="import"><b>📥 Import MCQs</b><span>Paste JSON</span></button>
+        <button class="menu card" data-action="backup"><b>💾 Backup / Restore</b><span>Export or import data</span></button>
+      </div>
+    </section>
+
+    <section id="quiz" class="screen">
+      <div class="quiz-head">
+        <button class="back" data-action="home">‹ Dashboard</button>
+        <span id="quizCounter"></span>
+      </div>
+      <div class="progress"><div id="progressBar"></div></div>
+      <article class="question card">
+        <div class="tag-row"><span id="qSubject" class="tag"></span><span id="qTopic" class="tag"></span></div>
+        <h2 id="questionText"></h2>
+        <div id="options" class="options"></div>
+        <div id="feedback" class="feedback" hidden></div>
+        <button id="nextBtn" class="primary full" hidden>Next Question →</button>
+      </article>
+    </section>
+
+    <section id="bank" class="screen">
+      <div class="section-head"><button class="back" data-action="home">‹ Dashboard</button><h2>Question Bank</h2></div>
+      <input id="bankSearch" class="search" placeholder="Search subject, topic or question…">
+      <div id="bankList"></div>
+    </section>
+
+    <section id="import" class="screen">
+      <div class="section-head"><button class="back" data-action="home">‹ Dashboard</button><h2>Import MCQs</h2></div>
+      <p class="muted">Paste a JSON array using the schema shown in the README. Existing questions with the same ID are replaced.</p>
+      <textarea id="importBox" class="codebox" placeholder='[{"id":"POL-001","subject":"Polity","topic":"Constitution","question":"...","options":["A","B","C","D"],"answer":0,"explanation":"...","source":"Provided notes"}]'></textarea>
+      <button id="importRun" class="primary full">Import Questions</button>
+      <div id="importMsg" class="notice" hidden></div>
+    </section>
+
+    <section id="backup" class="screen">
+      <div class="section-head"><button class="back" data-action="home">‹ Dashboard</button><h2>Backup / Restore</h2></div>
+      <div class="card pad">
+        <h3>Backup</h3><p class="muted">Download your questions and attempt history as one JSON file.</p>
+        <button id="exportBtn" class="primary full">Export Backup</button>
+      </div>
+      <div class="card pad">
+        <h3>Restore</h3><p class="muted">Choose a backup JSON file exported by this app.</p>
+        <input id="restoreFile" type="file" accept=".json,application/json">
+        <div id="restoreMsg" class="notice" hidden></div>
+      </div>
+      <div class="card pad danger-card">
+        <h3>Reset Attempts</h3><p class="muted">Removes attempt history but keeps your question bank.</p>
+        <button id="resetBtn" class="danger full">Reset Attempt History</button>
+      </div>
+    </section>
+  </main>
+
+  <nav class="bottom-nav">
+    <button data-action="home">⌂<span>Home</span></button>
+    <button data-action="start">▶<span>Quiz</span></button>
+    <button data-action="bank">☷<span>Bank</span></button>
+    <button data-action="import">＋<span>Import</span></button>
+  </nav>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
