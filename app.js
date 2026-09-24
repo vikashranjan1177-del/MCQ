@@ -1,30 +1,876 @@
-const KEY="upsc-mcq-revision-v1";
-const sample=[
-{id:"POL-001",subject:"Polity",topic:"Constitution",question:"The Constitution derives its authority directly from whom?",options:["Parliament","The President","The people of India","The Supreme Court"],answer:2,explanation:"The Constitution is founded on popular sovereignty: its authority ultimately derives from the people.",source:"Provided notes"},
-{id:"POL-002",subject:"Polity",topic:"Constitution",question:"Which statement best describes the relationship between constitutional institutions and the Constitution?",options:["Institutions create the Constitution","Institutions derive power from the Constitution","Institutions are above the Constitution","Institutions derive power only from Parliament"],answer:1,explanation:"Constitutional institutions exercise powers that are conferred or structured by the Constitution.",source:"Provided notes"},
-{id:"POL-003",subject:"Polity",topic:"Citizenship",question:"In the Constitution-related notes, the State–people relationship is associated with which concept?",options:["Federalism","Citizenship","Judicial review","Emergency"],answer:1,explanation:"The supplied notes identify citizenship as the State–people relationship.",source:"Provided notes"}
+/* =========================================================
+   UPSC MCQ REVISION APP
+   Clean working JavaScript
+   ========================================================= */
+
+"use strict";
+
+/* ---------- STORAGE ---------- */
+
+const STORAGE_KEY = "upsc_mcq_questions";
+
+let questions = [];
+let currentQuestion = 0;
+let score = 0;
+let answered = false;
+
+
+/* ---------- DEFAULT QUESTIONS ---------- */
+
+const defaultQuestions = [
+    {
+        id: "POL-001",
+        subject: "Polity",
+        topic: "Constitution",
+        question: "Which Article of the Constitution of India deals with equality before law?",
+        options: [
+            "Article 12",
+            "Article 14",
+            "Article 19",
+            "Article 21"
+        ],
+        answer: 1,
+        explanation: "Article 14 guarantees equality before law and equal protection of the laws."
+    },
+
+    {
+        id: "ECO-001",
+        subject: "Economy",
+        topic: "Monetary Policy",
+        question: "Which institution is responsible for conducting monetary policy in India?",
+        options: [
+            "Ministry of Finance",
+            "SEBI",
+            "Reserve Bank of India",
+            "NITI Aayog"
+        ],
+        answer: 2,
+        explanation: "The Reserve Bank of India is responsible for monetary policy."
+    },
+
+    {
+        id: "GEO-001",
+        subject: "Geography",
+        topic: "Physical Geography",
+        question: "The Coriolis force is caused primarily by:",
+        options: [
+            "Revolution of the Earth",
+            "Rotation of the Earth",
+            "Tilt of the Earth's axis",
+            "Gravitational force of the Moon"
+        ],
+        answer: 1,
+        explanation: "The Coriolis effect results from Earth's rotation."
+    }
 ];
-let data=JSON.parse(localStorage.getItem(KEY)||"null")||{questions:sample,attempts:{}};
-function save(){localStorage.setItem(KEY,JSON.stringify(data))}
-function qs(s){return document.querySelector(s)} function qsa(s){return [...document.querySelectorAll(s)]}
-function show(id){qsa(".screen").forEach(x=>x.classList.remove("active"));qs("#"+id).classList.add("active");window.scrollTo(0,0);if(id==="dashboard")renderStats();if(id==="bank")renderBank()}
-function attempted(id){return data.attempts[id]}
-function renderStats(){const q=data.questions;const at=Object.values(data.attempts);const correct=at.filter(x=>x.correct).length;qs("#totalStat").textContent=q.length;qs("#unseenStat").textContent=q.filter(x=>!attempted(x.id)).length;qs("#wrongStat").textContent=q.filter(x=>attempted(x.id)&&!attempted(x.id).correct).length;qs("#accuracyStat").textContent=(at.length?Math.round(correct/at.length*100):0)+"%";qs("#bankSummary").textContent=`${q.length} questions • ${qsa(".tag").length? "":""} Your progress is saved on this device.`)}
-let quiz={list:[],i:0};
-function start(mode="all"){let list=data.questions;if(mode==="unseen")list=list.filter(q=>!attempted(q.id));if(mode==="wrong")list=list.filter(q=>attempted(q.id)&&!attempted(q.id).correct);if(!list.length){alert("No questions in this mode.");return}quiz={list:[...list].sort(()=>Math.random()-.5),i:0};show("quiz");renderQuestion()}
-function renderQuestion(){const q=quiz.list[quiz.i];qs("#quizCounter").textContent=`${quiz.i+1} / ${quiz.list.length}`;qs("#progressBar").style.width=((quiz.i)/quiz.list.length*100)+"%";qs("#qSubject").textContent=q.subject||"General";qs("#qTopic").textContent=q.topic||"";qs("#questionText").textContent=q.question;qs("#feedback").hidden=true;qs("#nextBtn").hidden=true;const box=qs("#options");box.innerHTML="";q.options.forEach((o,n)=>{const b=document.createElement("button");b.className="option";b.textContent=String.fromCharCode(65+n)+". "+o;b.onclick=()=>answer(n);box.appendChild(b)})}
-function answer(n){const q=quiz.list[quiz.i],correct=n===q.answer;data.attempts[q.id]={selected:n,correct,at:new Date().toISOString()};save();qsa(".option").forEach((b,i)=>{b.disabled=true;if(i===q.answer)b.classList.add("correct");if(i===n&&!correct)b.classList.add("wrong")});const f=qs("#feedback");f.hidden=false;f.innerHTML=`<b>${correct?"✓ Correct":"✗ Incorrect"}</b>${q.explanation||"No explanation supplied."}`;qs("#nextBtn").hidden=false;renderStats()}
-qs("#nextBtn").onclick=()=>{if(quiz.i<quiz.list.length-1){quiz.i++;renderQuestion()}else{alert("Quiz complete. Your progress has been saved.");show("dashboard")}};
-function renderBank(){const term=(qs("#bankSearch").value||"").toLowerCase();const items=data.questions.filter(q=>(q.question+" "+q.subject+" "+q.topic).toLowerCase().includes(term));qs("#bankList").innerHTML=items.map(q=>`<div class="bank-item card"><h3>${escapeHtml(q.id)} • ${escapeHtml(q.subject||"General")}</h3><p>${escapeHtml(q.question)}</p><p style="margin-top:7px">Status: ${attempted(q.id)?(attempted(q.id).correct?"Correct":"Wrong"):"Unseen"}</p></div>`).join("")||'<p class="muted">No matching questions.</p>'}
-function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
-qsa("[data-action]").forEach(b=>b.addEventListener("click",()=>{const a=b.dataset.action;if(a==="home")show("dashboard");if(a==="start")start("all");if(a==="unseen")start("unseen");if(a==="wrong")start("wrong");if(a==="bank")show("bank");if(a==="import")show("import");if(a==="backup")show("backup")}));
-qs("#bankSearch").addEventListener("input",renderBank);
-qs("#importRun").onclick=()=>{try{const incoming=JSON.parse(qs("#importBox").value);if(!Array.isArray(incoming))throw Error("JSON must be an array.");incoming.forEach(validate);const map=new Map(data.questions.map(q=>[q.id,q]));incoming.forEach(q=>map.set(q.id,q));data.questions=[...map.values()];save();qs("#importMsg").hidden=false;qs("#importMsg").textContent=`Imported ${incoming.length} question(s). Total: ${data.questions.length}.`;renderStats()}catch(e){qs("#importMsg").hidden=false;qs("#importMsg").textContent="Import failed: "+e.message}}
-function validate(q){if(!q.id||!q.question||!Array.isArray(q.options)||q.options.length<2||typeof q.answer!=="number"||q.answer<0||q.answer>=q.options.length)throw Error("Each question needs id, question, options and a valid numeric answer index.")}
-qs("#exportBtn").onclick=()=>{const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="upsc-mcq-backup.json";a.click();URL.revokeObjectURL(a.href)}
-qs("#restoreFile").onchange=async e=>{try{const obj=JSON.parse(await e.target.files[0].text());if(!obj.questions||!obj.attempts)throw Error("Invalid backup.");data=obj;save();qs("#restoreMsg").hidden=false;qs("#restoreMsg").textContent="Backup restored.";renderStats()}catch(err){qs("#restoreMsg").hidden=false;qs("#restoreMsg").textContent="Restore failed: "+err.message}}
-qs("#resetBtn").onclick=()=>{if(confirm("Reset all attempt history?")){data.attempts={};save();renderStats();alert("Attempt history reset.")}};
-if("serviceWorker"in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
-let deferredPrompt;window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;qs("#installBtn").hidden=false});qs("#installBtn").onclick=async()=>{if(deferredPrompt){deferredPrompt.prompt();deferredPrompt=null}};
-renderStats();
-alert("APP.JS IS WORKING");
+
+
+/* ---------- INITIALIZATION ---------- */
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    loadQuestions();
+
+    setupNavigation();
+    setupQuiz();
+    setupImport();
+    setupSearch();
+
+    showScreen("home");
+
+    console.log("UPSC MCQ App loaded successfully.");
+});
+
+
+/* ---------- LOAD QUESTIONS ---------- */
+
+function loadQuestions() {
+
+    try {
+
+        const saved = localStorage.getItem(STORAGE_KEY);
+
+        if (saved) {
+            questions = JSON.parse(saved);
+        }
+
+        if (!Array.isArray(questions) || questions.length === 0) {
+            questions = defaultQuestions;
+            saveQuestions();
+        }
+
+    } catch (error) {
+
+        console.error("Question loading error:", error);
+
+        questions = defaultQuestions;
+    }
+
+    updateQuestionCount();
+}
+
+
+/* ---------- SAVE QUESTIONS ---------- */
+
+function saveQuestions() {
+
+    try {
+        localStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify(questions)
+        );
+    } catch (error) {
+        console.error("Could not save questions:", error);
+    }
+
+    updateQuestionCount();
+}
+
+
+/* ---------- NAVIGATION ---------- */
+
+function setupNavigation() {
+
+    /*
+       Event delegation:
+       Any button containing data-action will work,
+       even if the button was created dynamically.
+    */
+
+    document.addEventListener("click", function (event) {
+
+        const button = event.target.closest("[data-action]");
+
+        if (!button) return;
+
+        const action = button.dataset.action;
+
+        handleAction(action);
+    });
+}
+
+
+function handleAction(action) {
+
+    console.log("Action:", action);
+
+    switch (action) {
+
+        case "home":
+            showScreen("home");
+            break;
+
+        case "quiz":
+        case "startQuiz":
+            startQuiz();
+            break;
+
+        case "bank":
+            showScreen("bank");
+            renderQuestionBank();
+            break;
+
+        case "import":
+            showScreen("import");
+            break;
+
+        case "backup":
+            showScreen("backup");
+            renderBackup();
+            break;
+
+        default:
+            console.warn("Unknown action:", action);
+    }
+}
+
+
+/* ---------- SCREEN MANAGEMENT ---------- */
+
+function showScreen(screenName) {
+
+    const screens = document.querySelectorAll(".screen");
+
+    screens.forEach(function (screen) {
+        screen.classList.remove("active");
+        screen.style.display = "none";
+    });
+
+
+    const target = document.getElementById(screenName);
+
+    if (target) {
+
+        target.classList.add("active");
+        target.style.display = "block";
+
+    } else {
+
+        console.warn("Screen not found:", screenName);
+    }
+}
+
+
+/* ---------- QUIZ ---------- */
+
+function setupQuiz() {
+
+    const nextButton = document.getElementById("nextBtn");
+
+    if (nextButton) {
+
+        nextButton.addEventListener("click", function () {
+
+            currentQuestion++;
+
+            if (currentQuestion >= questions.length) {
+
+                showQuizResult();
+
+            } else {
+
+                renderQuestion();
+            }
+
+        });
+    }
+}
+
+
+function startQuiz() {
+
+    if (questions.length === 0) {
+
+        alert("No questions are available.");
+
+        return;
+    }
+
+    currentQuestion = 0;
+    score = 0;
+    answered = false;
+
+    showScreen("quiz");
+
+    renderQuestion();
+}
+
+
+function renderQuestion() {
+
+    if (!questions.length) return;
+
+    const q = questions[currentQuestion];
+
+    answered = false;
+
+
+    /* Counter */
+
+    const counter = document.getElementById("quizCounter");
+
+    if (counter) {
+
+        counter.textContent =
+            "Question " +
+            (currentQuestion + 1) +
+            " of " +
+            questions.length;
+    }
+
+
+    /* Progress */
+
+    const progress = document.getElementById("progressBar");
+
+    if (progress) {
+
+        const percent =
+            ((currentQuestion) / questions.length) * 100;
+
+        progress.style.width = percent + "%";
+    }
+
+
+    /* Subject */
+
+    const subject = document.getElementById("qSubject");
+
+    if (subject) {
+        subject.textContent = q.subject || "";
+    }
+
+
+    /* Topic */
+
+    const topic = document.getElementById("qTopic");
+
+    if (topic) {
+        topic.textContent = q.topic || "";
+    }
+
+
+    /* Question */
+
+    const questionText =
+        document.getElementById("questionText");
+
+    if (questionText) {
+        questionText.textContent = q.question || "";
+    }
+
+
+    /* Options */
+
+    const optionsContainer =
+        document.getElementById("options");
+
+    if (optionsContainer) {
+
+        optionsContainer.innerHTML = "";
+
+        q.options.forEach(function (option, index) {
+
+            const button =
+                document.createElement("button");
+
+            button.className = "option";
+
+            button.textContent =
+                String.fromCharCode(65 + index) +
+                ". " +
+                option;
+
+            button.addEventListener(
+                "click",
+                function () {
+
+                    selectAnswer(index);
+                }
+            );
+
+            optionsContainer.appendChild(button);
+        });
+    }
+
+
+    /* Feedback */
+
+    const feedback =
+        document.getElementById("feedback");
+
+    if (feedback) {
+
+        feedback.hidden = true;
+        feedback.innerHTML = "";
+    }
+
+
+    /* Next */
+
+    const nextButton =
+        document.getElementById("nextBtn");
+
+    if (nextButton) {
+
+        nextButton.hidden = true;
+    }
+}
+
+
+/* ---------- ANSWER ---------- */
+
+function selectAnswer(selectedIndex) {
+
+    if (answered) return;
+
+    answered = true;
+
+    const q = questions[currentQuestion];
+
+    const optionButtons =
+        document.querySelectorAll("#options .option");
+
+
+    optionButtons.forEach(function (button, index) {
+
+        button.disabled = true;
+
+        if (index === q.answer) {
+            button.classList.add("correct");
+        }
+
+        if (
+            index === selectedIndex &&
+            selectedIndex !== q.answer
+        ) {
+            button.classList.add("wrong");
+        }
+    });
+
+
+    if (selectedIndex === q.answer) {
+        score++;
+    }
+
+
+    const feedback =
+        document.getElementById("feedback");
+
+    if (feedback) {
+
+        feedback.hidden = false;
+
+        if (selectedIndex === q.answer) {
+
+            feedback.innerHTML =
+                "<strong>Correct!</strong><br>" +
+                (q.explanation || "");
+
+        } else {
+
+            feedback.innerHTML =
+                "<strong>Incorrect.</strong><br>" +
+                "Correct answer: " +
+                q.options[q.answer] +
+                "<br>" +
+                (q.explanation || "");
+        }
+    }
+
+
+    const nextButton =
+        document.getElementById("nextBtn");
+
+    if (nextButton) {
+
+        nextButton.hidden = false;
+
+        if (currentQuestion === questions.length - 1) {
+            nextButton.textContent = "Finish Quiz";
+        } else {
+            nextButton.textContent = "Next Question →";
+        }
+    }
+}
+
+
+/* ---------- QUIZ RESULT ---------- */
+
+function showQuizResult() {
+
+    const quiz =
+        document.getElementById("quiz");
+
+    if (!quiz) return;
+
+
+    const percentage =
+        questions.length
+            ? Math.round(
+                (score / questions.length) * 100
+              )
+            : 0;
+
+
+    quiz.innerHTML = `
+
+        <div class="card">
+
+            <h2>Quiz Complete</h2>
+
+            <p>
+                Score:
+                <strong>
+                    ${score} / ${questions.length}
+                </strong>
+            </p>
+
+            <p>
+                Accuracy:
+                <strong>
+                    ${percentage}%
+                </strong>
+            </p>
+
+            <button
+                class="primary full"
+                onclick="startQuiz()">
+                Restart Quiz
+            </button>
+
+            <button
+                class="back"
+                data-action="home">
+                ← Dashboard
+            </button>
+
+        </div>
+    `;
+}
+
+
+/* ---------- QUESTION BANK ---------- */
+
+function renderQuestionBank() {
+
+    const list =
+        document.getElementById("bankList");
+
+    if (!list) return;
+
+
+    if (questions.length === 0) {
+
+        list.innerHTML =
+            "<p>No questions available.</p>";
+
+        return;
+    }
+
+
+    list.innerHTML = "";
+
+
+    questions.forEach(function (q, index) {
+
+        const item =
+            document.createElement("div");
+
+        item.className = "card";
+
+        item.innerHTML = `
+
+            <h3>
+                ${escapeHTML(q.id || "Question " + (index + 1))}
+            </h3>
+
+            <p>
+                <strong>
+                    ${escapeHTML(q.subject || "")}
+                </strong>
+                —
+                ${escapeHTML(q.topic || "")}
+            </p>
+
+            <p>
+                ${escapeHTML(q.question || "")}
+            </p>
+
+        `;
+
+        list.appendChild(item);
+    });
+}
+
+
+/* ---------- SEARCH ---------- */
+
+function setupSearch() {
+
+    const search =
+        document.getElementById("bankSearch");
+
+    if (!search) return;
+
+
+    search.addEventListener("input", function () {
+
+        const term =
+            search.value.trim().toLowerCase();
+
+        const list =
+            document.getElementById("bankList");
+
+        if (!list) return;
+
+
+        const filtered =
+            questions.filter(function (q) {
+
+                return (
+                    String(q.subject || "")
+                        .toLowerCase()
+                        .includes(term) ||
+
+                    String(q.topic || "")
+                        .toLowerCase()
+                        .includes(term) ||
+
+                    String(q.question || "")
+                        .toLowerCase()
+                        .includes(term)
+                );
+            });
+
+
+        list.innerHTML = "";
+
+
+        filtered.forEach(function (q) {
+
+            const item =
+                document.createElement("div");
+
+            item.className = "card";
+
+            item.innerHTML = `
+                <h3>
+                    ${escapeHTML(q.id || "")}
+                </h3>
+
+                <p>
+                    <strong>
+                        ${escapeHTML(q.subject || "")}
+                    </strong>
+                    —
+                    ${escapeHTML(q.topic || "")}
+                </p>
+
+                <p>
+                    ${escapeHTML(q.question || "")}
+                </p>
+            `;
+
+            list.appendChild(item);
+        });
+    });
+}
+
+
+/* ---------- IMPORT ---------- */
+
+function setupImport() {
+
+    const importButton =
+        document.getElementById("importRun");
+
+    if (!importButton) return;
+
+
+    importButton.addEventListener(
+        "click",
+        function () {
+
+            const box =
+                document.getElementById("importBox");
+
+            const message =
+                document.getElementById("importMsg");
+
+
+            if (!box) return;
+
+
+            try {
+
+                const imported =
+                    JSON.parse(box.value);
+
+
+                if (!Array.isArray(imported)) {
+
+                    throw new Error(
+                        "JSON must contain an array."
+                    );
+                }
+
+
+                const valid =
+                    imported.filter(function (q) {
+
+                        return (
+                            q &&
+                            typeof q.question === "string" &&
+                            Array.isArray(q.options) &&
+                            q.options.length >= 2 &&
+                            typeof q.answer === "number"
+                        );
+                    });
+
+
+                if (valid.length === 0) {
+
+                    throw new Error(
+                        "No valid questions found."
+                    );
+                }
+
+
+                questions = valid;
+
+                saveQuestions();
+
+
+                if (message) {
+
+                    message.hidden = false;
+
+                    message.textContent =
+                        valid.length +
+                        " question(s) imported successfully.";
+                }
+
+
+                renderQuestionBank();
+
+
+            } catch (error) {
+
+                if (message) {
+
+                    message.hidden = false;
+
+                    message.textContent =
+                        "Import error: " +
+                        error.message;
+                }
+
+                console.error(error);
+            }
+        }
+    );
+}
+
+
+/* ---------- BACKUP ---------- */
+
+function renderBackup() {
+
+    const backupScreen =
+        document.getElementById("backup");
+
+    if (!backupScreen) return;
+
+
+    const old =
+        backupScreen.querySelector(".backup-content");
+
+    if (old) old.remove();
+
+
+    const container =
+        document.createElement("div");
+
+    container.className =
+        "card backup-content";
+
+
+    container.innerHTML = `
+
+        <h3>Question Bank Backup</h3>
+
+        <p>
+            ${questions.length}
+            question(s) currently stored.
+        </p>
+
+        <button
+            class="primary"
+            id="downloadBackup">
+            Download Backup
+        </button>
+
+    `;
+
+
+    backupScreen.appendChild(container);
+
+
+    document
+        .getElementById("downloadBackup")
+        .addEventListener(
+            "click",
+            downloadBackup
+        );
+}
+
+
+function downloadBackup() {
+
+    const data =
+        JSON.stringify(
+            questions,
+            null,
+            2
+        );
+
+
+    const blob =
+        new Blob(
+            [data],
+            {
+                type: "application/json"
+            }
+        );
+
+
+    const url =
+        URL.createObjectURL(blob);
+
+
+    const link =
+        document.createElement("a");
+
+    link.href = url;
+
+    link.download =
+        "upsc-question-bank.json";
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    link.remove();
+
+    URL.revokeObjectURL(url);
+}
+
+
+/* ---------- COUNT ---------- */
+
+function updateQuestionCount() {
+
+    const elements =
+        document.querySelectorAll(
+            "[data-question-count]"
+        );
+
+
+    elements.forEach(function (element) {
+
+        element.textContent =
+            questions.length;
+    });
+}
+
+
+/* ---------- HTML SAFETY ---------- */
+
+function escapeHTML(value) {
+
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+
+/* ---------- DEBUG ---------- */
+
+window.addEventListener(
+    "error",
+    function (event) {
+
+        console.error(
+            "JavaScript error:",
+            event.error || event.message
+        );
+    }
+);
+
+console.log(
+    "UPSC MCQ Revision App JavaScript ready."
+);
